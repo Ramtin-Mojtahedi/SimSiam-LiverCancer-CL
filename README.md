@@ -10,10 +10,10 @@ Train the model: python train.py
 Evaluate the model: python evaluate.py
 
 ## Dependencies
-Python 3.8+
-TensorFlow 2.x
-NumPy
-scikit-learn
+* Python 3.8+
+* TensorFlow 2.x
+* NumPy
+* scikit-learn
 
 ## Contribution
 Feel free to open an issue or submit a PR for improvements.

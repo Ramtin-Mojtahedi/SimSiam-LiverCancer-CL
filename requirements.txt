@@ -1,0 +1,7 @@
+numpy
+nibabel
+scikit-image
+tqdm
+opencv-python
+regex
+scikit-learn

@@ -1,0 +1,58 @@
+cff-version: 1.2.0
+message: "If you use this repository, please cite the associated paper."
+title: "SimSiam for Primary and Secondary Liver Cancer Classification"
+type: software
+authors:
+  - family-names: Mojtahedi
+    given-names: Ramtin
+    orcid: "https://orcid.org/0000-0002-3953-3256"
+  - family-names: Hamghalam
+    given-names: Mohammad
+    orcid: "https://orcid.org/0000-0003-2543-0712"
+  - family-names: Jarnagin
+    given-names: "William R."
+    orcid: "https://orcid.org/0000-0002-1635-5768"
+  - family-names: Do
+    given-names: "Richard K. G."
+    orcid: "https://orcid.org/0000-0002-6554-0310"
+  - family-names: Simpson
+    given-names: "Amber L."
+    orcid: "https://orcid.org/0000-0002-4387-8417"
+repository-code: "https://github.com/Ramtin-Mojtahedi/SimSiam-LiverCancer-CL"
+url: "https://github.com/Ramtin-Mojtahedi/SimSiam-LiverCancer-CL"
+keywords:
+  - contrastive learning
+  - SimSiam
+  - liver cancer
+  - computed tomography
+  - medical imaging
+preferred-citation:
+  type: conference-paper
+  title: "Leveraging Contrastive Learning with SimSiam for the Classification of Primary and Secondary Liver Cancers"
+  authors:
+    - family-names: Mojtahedi
+      given-names: Ramtin
+      orcid: "https://orcid.org/0000-0002-3953-3256"
+    - family-names: Hamghalam
+      given-names: Mohammad
+      orcid: "https://orcid.org/0000-0003-2543-0712"
+    - family-names: Jarnagin
+      given-names: "William R."
+      orcid: "https://orcid.org/0000-0002-1635-5768"
+    - family-names: Do
+      given-names: "Richard K. G."
+      orcid: "https://orcid.org/0000-0002-6554-0310"
+    - family-names: Simpson
+      given-names: "Amber L."
+      orcid: "https://orcid.org/0000-0002-4387-8417"
+  conference:
+    name: "MICCAI 2023 Workshops"
+  collection-title: "Medical Image Computing and Computer Assisted Intervention – MICCAI 2023 Workshops"
+  publisher:
+    name: Springer
+  volume: 14394
+  start: 311
+  end: 321
+  year: 2023
+  doi: "10.1007/978-3-031-47425-5_28"
+  url: "https://doi.org/10.1007/978-3-031-47425-5_28"

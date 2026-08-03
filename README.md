@@ -6,6 +6,40 @@ Research code snapshot accompanying:
 
 > Ramtin Mojtahedi, Mohammad Hamghalam, William R. Jarnagin, Richard K. G. Do, and Amber L. Simpson. “Leveraging Contrastive Learning with SimSiam for the Classification of Primary and Secondary Liver Cancers.” *MICCAI 2023 Workshops*, LNCS 14394, 311–321 (2023). [https://doi.org/10.1007/978-3-031-47425-5_28](https://doi.org/10.1007/978-3-031-47425-5_28)
 
+<!-- repository-guide:start -->
+## At a glance
+
+[Paper](https://doi.org/10.1007/978-3-031-47425-5_28) · [`Simsiam.py`](Simsiam.py) · [`requirements.txt`](requirements.txt) · [`CITATION.cff`](CITATION.cff)
+
+### Dependency evidence
+
+| Status | Packages |
+|---|---|
+| Declared and imported | `numpy`, `nibabel`, `scikit-image`, `tqdm`, `opencv-python`, `scikit-learn` |
+| Imported but missing from `requirements.txt` | `tensorflow`, `imbalanced-learn`, `matplotlib` |
+| Declared without a matching third-party import | `regex`; the export imports Python's standard-library `re` module |
+
+The historical notebook command for `tensorflow-gpu==2.5.0` and its older mixed-precision API are not a tested modern environment specification.
+
+### Workflow represented by the export
+
+```mermaid
+flowchart LR
+    A["Private NIfTI CT and label volumes<br/>HCC · ICC · MCRC"] --> B["Select tumour slices<br/>label 2 · area threshold · up to 15 slices"]
+    B --> C["Tumour-centred crop<br/>window L=40/W=350 · resize 299×299 · RGB PNG"]
+    C --> D["Recorded train/validation construction and tf.data augmentation"]
+    D --> E["Supervised baseline branch"]
+    D --> F["Paired augmented views for SimSiam"]
+    F --> G["InceptionV3 · Xception · ResNet152V2 encoders<br/>cosine and MSE objectives"]
+    G --> H["Saved encoder"]
+    H --> I["Supervised three-class fine-tuning"]
+    E --> J["Checkpoints and classification metrics"]
+    I --> J
+```
+
+> **Reproducibility boundary:** the export contains multiple dataset-construction paths, notebook-only syntax, absolute paths, and missing data and weights. Establish one documented patient-level split and a tested TensorFlow environment before reuse.
+<!-- repository-guide:end -->
+
 ## Repository status
 
 This repository is an archival research snapshot, not a packaged or end-to-end reproducible software release. It preserves the main experimental workflow exported from the original Google Colab notebook. The snapshot does **not** include the clinical CT data, segmentation labels, trained model weights, fixed data splits, or standalone `train.py` and `evaluate.py` programs.

@@ -67,10 +67,10 @@ jobs:
           set -euxo pipefail
           python automation/ai_ivlp_public_models/evaluate_one.py \
             --model "${MODEL_NAME}" \
-            --output-root automation_output \
-            --work-root work \
+            --output-root "$PWD/automation_output" \
+            --work-root "$PWD/work" \
             --batch-size 64
-          python -m pip freeze > "automation_output/${MODEL_NAME}/results/pip_freeze.txt"
+          python -m pip freeze > "$PWD/automation_output/${MODEL_NAME}/results/pip_freeze.txt"
 
       - name: Upload verified checkpoint and model results
         uses: actions/upload-artifact@v4

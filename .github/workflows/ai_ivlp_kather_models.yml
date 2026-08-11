@@ -1,0 +1,142 @@
+name: Build verified AI-IVLP Kather100K model package
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "automation/ai_ivlp_public_models/**"
+      - ".github/workflows/ai_ivlp_kather_models.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-ivlp-kather-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  evaluate:
+    name: Evaluate ${{ matrix.model }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      max-parallel: 10
+      matrix:
+        model:
+          - densenet121-kather100k
+          - densenet161-kather100k
+          - densenet169-kather100k
+          - densenet201-kather100k
+          - resnet18-kather100k
+          - resnet34-kather100k
+          - resnet50-kather100k
+          - resnet101-kather100k
+          - resnext50_32x4d-kather100k
+          - resnext101_32x8d-kather100k
+
+    env:
+      MODEL_NAME: ${{ matrix.model }}
+      PYTHONUNBUFFERED: "1"
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+
+    steps:
+      - name: Check out the temporary branch
+        uses: actions/checkout@v4
+
+      - name: Configure Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install pinned CPU environment
+        shell: bash
+        run: |
+          set -euxo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install \
+            --index-url https://download.pytorch.org/whl/cpu \
+            torch==2.8.0 torchvision==0.23.0
+          python -m pip install tiatoolbox==2.1.3
+
+      - name: Download checkpoint and independently rerun validation
+        shell: bash
+        run: |
+          set -euxo pipefail
+          python automation/ai_ivlp_public_models/evaluate_one.py \
+            --model "${MODEL_NAME}" \
+            --output-root "$PWD/automation_output" \
+            --work-root "$PWD/work" \
+            --batch-size 64
+          python -m pip freeze > "$PWD/automation_output/${MODEL_NAME}/results/pip_freeze.txt"
+
+      - name: Upload verified checkpoint and model results
+        uses: actions/upload-artifact@v4
+        with:
+          name: model-${{ matrix.model }}
+          path: automation_output
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 1
+
+  package:
+    name: Assemble one final ZIP
+    needs:
+      - evaluate
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: Check out the temporary branch
+        uses: actions/checkout@v4
+
+      - name: Configure Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Download all ten verified model artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: model-*
+          path: downloaded-model-artifacts
+          merge-multiple: true
+
+      - name: Build and verify the final package
+        shell: bash
+        run: |
+          set -euxo pipefail
+          python automation/ai_ivlp_public_models/package_results.py \
+            downloaded-model-artifacts \
+            automation/ai_ivlp_public_models \
+            final_output
+          python automation/ai_ivlp_public_models/verify_package.py \
+            final_output/AI_IVLP_TIA_Kather100K_10Models_Validated
+          python - <<'PY'
+          import json
+          import zipfile
+          from pathlib import Path
+
+          zip_path = Path("final_output/AI_IVLP_TIA_Kather100K_10Models_Validated.zip")
+          with zipfile.ZipFile(zip_path, "r") as archive:
+              assert archive.testzip() is None
+              weights = [name for name in archive.namelist() if name.endswith(".pth")]
+              assert len(weights) == 10, weights
+          summary = json.loads(Path("final_output/FINAL_PACKAGE_SUMMARY.json").read_text())
+          assert summary["model_count"] == 10
+          print(json.dumps(summary, indent=2))
+          PY
+
+      - name: Upload one completed downloadable ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: AI_IVLP_TIA_Kather100K_10Models_Validated
+          path: |
+            final_output/AI_IVLP_TIA_Kather100K_10Models_Validated.zip
+            final_output/AI_IVLP_TIA_Kather100K_10Models_Validated.zip.sha256.txt
+            final_output/FINAL_PACKAGE_SUMMARY.json
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 1

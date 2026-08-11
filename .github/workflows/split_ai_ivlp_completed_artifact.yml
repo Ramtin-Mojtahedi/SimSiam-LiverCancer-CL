@@ -1,0 +1,119 @@
+name: Split completed AI-IVLP package for transfer
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/split_ai_ivlp_completed_artifact.yml"
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  split:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      SOURCE_RUN_ID: "31488735501"
+      SOURCE_ARTIFACT_NAME: "AI_IVLP_TIA_Kather100K_10Models_Validated"
+      PACKAGE_BASENAME: "AI_IVLP_TIA_Kather100K_10Models_Validated.zip"
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Check out workflow revision
+        uses: actions/checkout@v4
+
+      - name: Download the already completed verified package
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p source_artifact
+          gh run download "$SOURCE_RUN_ID" \
+            --repo "$GITHUB_REPOSITORY" \
+            --name "$SOURCE_ARTIFACT_NAME" \
+            --dir source_artifact
+          test -s "source_artifact/$PACKAGE_BASENAME"
+          test -s "source_artifact/${PACKAGE_BASENAME}.sha256.txt"
+          test -s "source_artifact/FINAL_PACKAGE_SUMMARY.json"
+
+      - name: Verify and split without modifying the original ZIP
+        shell: bash
+        run: |
+          set -euxo pipefail
+          cd source_artifact
+          sha256sum -c "${PACKAGE_BASENAME}.sha256.txt"
+          python - <<'PY'
+          import zipfile
+          from pathlib import Path
+          path = Path("AI_IVLP_TIA_Kather100K_10Models_Validated.zip")
+          with zipfile.ZipFile(path, "r") as archive:
+              assert archive.testzip() is None
+              weights = [name for name in archive.namelist() if name.endswith(".pth")]
+              assert len(weights) == 10, weights
+          print("PASS: original ZIP integrity and 10-checkpoint inventory verified")
+          PY
+          mkdir -p ../parts
+          split -b 350M -d -a 2 \
+            "$PACKAGE_BASENAME" \
+            "../parts/${PACKAGE_BASENAME}.part-"
+          cp "${PACKAGE_BASENAME}.sha256.txt" ../parts/
+          cp FINAL_PACKAGE_SUMMARY.json ../parts/
+          cd ../parts
+          test "$(find . -maxdepth 1 -name '*.part-*' | wc -l)" -eq 3
+          sha256sum *.part-* > PART_CHECKSUMS_SHA256.txt
+          cat > REASSEMBLE.txt <<'EOF'
+          The three part files are byte-for-byte pieces of the original ZIP.
+
+          Linux/macOS:
+            cat AI_IVLP_TIA_Kather100K_10Models_Validated.zip.part-* > AI_IVLP_TIA_Kather100K_10Models_Validated.zip
+            sha256sum -c AI_IVLP_TIA_Kather100K_10Models_Validated.zip.sha256.txt
+
+          Windows PowerShell:
+            $parts = Get-ChildItem 'AI_IVLP_TIA_Kather100K_10Models_Validated.zip.part-*' | Sort-Object Name
+            $out = [System.IO.File]::Create('AI_IVLP_TIA_Kather100K_10Models_Validated.zip')
+            foreach ($part in $parts) { $bytes = [System.IO.File]::ReadAllBytes($part.FullName); $out.Write($bytes,0,$bytes.Length) }
+            $out.Close()
+            Get-FileHash 'AI_IVLP_TIA_Kather100K_10Models_Validated.zip' -Algorithm SHA256
+          EOF
+
+      - name: Upload part 00
+        uses: actions/upload-artifact@v4
+        with:
+          name: AI_IVLP_verified_part_00
+          path: parts/AI_IVLP_TIA_Kather100K_10Models_Validated.zip.part-00
+          compression-level: 0
+          retention-days: 1
+          if-no-files-found: error
+
+      - name: Upload part 01
+        uses: actions/upload-artifact@v4
+        with:
+          name: AI_IVLP_verified_part_01
+          path: parts/AI_IVLP_TIA_Kather100K_10Models_Validated.zip.part-01
+          compression-level: 0
+          retention-days: 1
+          if-no-files-found: error
+
+      - name: Upload part 02
+        uses: actions/upload-artifact@v4
+        with:
+          name: AI_IVLP_verified_part_02
+          path: parts/AI_IVLP_TIA_Kather100K_10Models_Validated.zip.part-02
+          compression-level: 0
+          retention-days: 1
+          if-no-files-found: error
+
+      - name: Upload verification metadata
+        uses: actions/upload-artifact@v4
+        with:
+          name: AI_IVLP_verified_metadata
+          path: |
+            parts/AI_IVLP_TIA_Kather100K_10Models_Validated.zip.sha256.txt
+            parts/PART_CHECKSUMS_SHA256.txt
+            parts/FINAL_PACKAGE_SUMMARY.json
+            parts/REASSEMBLE.txt
+          compression-level: 0
+          retention-days: 1
+          if-no-files-found: error

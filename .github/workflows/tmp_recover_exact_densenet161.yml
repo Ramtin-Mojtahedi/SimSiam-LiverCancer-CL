@@ -1,0 +1,49 @@
+name: Temporary exact DenseNet-161 checkpoint recovery
+
+on:
+  push:
+    branches:
+      - tmp-exact-densenet161-recovery-20260811
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/tmp_recover_exact_densenet161.yml
+
+permissions:
+  contents: read
+
+env:
+  MODEL_URL: https://huggingface.co/TIACentre/TIAToolbox_pretrained_weights/resolve/main/densenet161-kather100k.pth?download=true
+
+jobs:
+  recover-exact-checkpoint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Download immutable public checkpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p exact_model
+          curl --fail --location --retry 5 --retry-all-errors \
+            --output exact_model/densenet161-kather100k.pth \
+            "$MODEL_URL"
+          test "$(stat -c%s exact_model/densenet161-kather100k.pth)" -eq 107161395
+          sha256sum exact_model/densenet161-kather100k.pth | tee exact_model/SHA256SUMS.txt
+          cat > exact_model/PROVENANCE.txt <<'EOF'
+          Model ID: densenet161-kather100k
+          Source repository: TIACentre/TIAToolbox_pretrained_weights
+          Source file: densenet161-kather100k.pth
+          Expected bytes: 107161395
+          Intended use: exact restoration of the previously validated Kather100K checkpoint
+          EOF
+
+      - name: Upload exact checkpoint artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: exact-densenet161-kather100k
+          path: exact_model/
+          compression-level: 0
+          retention-days: 1
+          if-no-files-found: error

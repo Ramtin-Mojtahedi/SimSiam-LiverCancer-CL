@@ -1,3 +1,7 @@
+<img width="100%" src="https://raw.githubusercontent.com/Ramtin-Mojtahedi/Ramtin-Mojtahedi/main/assets/project-simsiam.svg" alt="Self-supervised learning: SimSiam representations for liver-cancer classification.">
+
+[Research profile](https://github.com/Ramtin-Mojtahedi) · [Project directory](https://github.com/Ramtin-Mojtahedi/Ramtin-Mojtahedi/blob/main/REPOSITORY_INDEX.md) · [Paper](https://doi.org/10.1007/978-3-031-47425-5_28)
+
 # SimSiam for Primary and Secondary Liver Cancer Classification
 
 [![Paper DOI](https://img.shields.io/badge/DOI-10.1007%2F978--3--031--47425--5__28-blue)](https://doi.org/10.1007/978-3-031-47425-5_28)
